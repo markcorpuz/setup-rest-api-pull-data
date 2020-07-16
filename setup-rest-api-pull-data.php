@@ -36,6 +36,11 @@ function setup_feature_pull_function( $atts ) {
         $field = $atts[ 'field' ];
     }
     
+    // variables | Field
+    if( array_key_exists( "template", $atts ) ) {
+        $template = $atts[ 'template' ];
+    }
+    
     // variables | Size
     if( array_key_exists( "size", $atts ) ) {
         $img_size = $atts[ 'size' ];
@@ -69,6 +74,16 @@ function setup_feature_pull_function( $atts ) {
 
     $url_combined = rtrim( $url, "/" ).'/wp-json/'.$rest_api_url_extension.'/'.$version.'/';
 
+    //$target = 'http://plan.smarterwebpackages.com/wp-json/wp/v2/partners';
+    //$target = 'http://plan.smarterwebpackages.com/wp-json/wp/v2/partners/170';
+    //if( $id ) {
+    $target = file_get_contents( $url_combined.$post_type.'/'.$id );
+    /*} else {
+        $target = file_get_contents( rtrim( $url, "/" ).'/wp-json/'.$rest_api_url_extension.'/'.$version.'/'.$post_type );
+    }*/
+
+    $array = json_decode( $target, TRUE, 512 );
+
     // validate URLs
     if( empty( $url ) ) {
 
@@ -84,19 +99,17 @@ function setup_feature_pull_function( $atts ) {
             
             if( empty( $field ) ) {
 
-                return "Please specify field you want to retrieve.";
+                if( empty( $template ) ) {
+
+                    return "Please specify field you want to retrieve or specify the template name to get a group of information from the source.";
+
+                } else {
+
+                    return setup_dig_for_template( $array, $template );
+
+                }
 
             } else {
-                
-                //$target = 'http://plan.smarterwebpackages.com/wp-json/wp/v2/partners';
-                //$target = 'http://plan.smarterwebpackages.com/wp-json/wp/v2/partners/170';
-                //if( $id ) {
-                    $target = file_get_contents( $url_combined.$post_type.'/'.$id );
-                /*} else {
-                    $target = file_get_contents( rtrim( $url, "/" ).'/wp-json/'.$rest_api_url_extension.'/'.$version.'/'.$post_type );
-                }*/
-
-                $array = json_decode( $target, TRUE, 512 );
 
                 if( is_array( $array ) ) {
                     //var_dump( $array );
@@ -206,7 +219,7 @@ function setup_feature_pull_function( $atts ) {
                                             } else {
 
                                                 return $values;
-                                                
+
                                             }
 
                                         }
@@ -234,10 +247,6 @@ function setup_feature_pull_function( $atts ) {
 if( !function_exists( 'setup_check_for_404' ) ) {
 
     function setup_check_for_404( $url ) {
-
-        // Creating a variable with an URL 
-        // to be checked 
-        //$url = 'https://www.geeksforgeeks.org'; 
           
         // Getting page header data 
         $array = @get_headers($url); 
@@ -360,3 +369,56 @@ if( !function_exists( 'setup_dig_for_the_gallery' ) ) {
     }
 
 }
+
+if( !function_exists( 'setup_dig_for_template' ) ) {
+
+    function setup_dig_for_template( $array, $template ) {
+
+        $collate_output = array();
+
+        //var_dump( $array ); echo '<hr />'.$template;
+        if( is_array( $array ) ) {
+
+            foreach( $array as $key => $value ) {
+                //echo '<h2>'.$key.'</h2>';
+                
+                if( is_array( $value ) ) {
+
+                    if( array_key_exists( "rendered", $value ) ) {
+
+                        //echo '<h3>1</h3>';
+                        $collate_output[ $key ] = $value[ 'rendered' ];
+
+                    } else {
+
+                        //echo '<h3>2</h3>';
+                        foreach( $value as $keys => $values ) {
+                            //echo $keys.' | '.$values.'<hr />';
+                            if( is_array( $values ) ) {
+                                //echo '<h3>2.1</h3>';
+                                foreach ($values as $k => $v) {
+                                    echo '<h4>'.$k.'</h4>'; var_dump($v);
+                                }
+
+                            } else {
+
+                                $collate_output[ $keys ] = $values;
+
+                            }
+                        }
+
+                    }
+
+                } else {
+                    //echo '<h3>3</h3>';
+                    $collate_output[ $key ] = $value;
+                }
+
+            }
+
+        }
+
+    }
+
+}
+
